@@ -41,17 +41,16 @@ class Config:
     max_length = 35 # longest sequence to parse
     n_classes = 2
     dropout = 0.95
-    embed_size = 100 # todo: make depend on input
+    embed_size = 300 # todo: make depend on input
     hidden_size = 1200
     second_hidden_size = None
     batch_size = 32
     n_epochs = 100
-    max_grad_norm = 10.
+    max_grad_norm = 5.
     lr = 0.0003
     lr_decay_rate = 0.9
     embeddings_trainable = True
     pos_weight = 1.7
-    relu_size = 800
 
     def __init__(self, args):
         self.cell = "lstm"
