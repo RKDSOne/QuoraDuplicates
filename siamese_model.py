@@ -70,7 +70,7 @@ class SiameseModel(Model):
 
         # Initialize state as vector of zeros.
         batch_size = tf.shape(x1)[0]
-        with tf.variable_scope("hCLayer", reuse=True):
+        with tf.variable_scope("hCLayer"):
             h1 = tf.get_variable("h1", initializer=xavier_init, shape=(self.config.batch_size, self.config.hidden_size))
             c1 = tf.get_variable("c1",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
             h2 =tf.get_variable("h2", shape=(self.config.batch_size, self.config.hidden_size),
@@ -140,13 +140,13 @@ class SiameseModel(Model):
         xavier_init = tf.contrib.layers.xavier_initializer()
         m = self.config.second_hidden_size
         loss = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(targets=self.labels_placeholder, logits=preds, pos_weight=1.675))       
-        with tf.variable_scope("HiddenLayerVars"):
+        with tf.variable_scope("HiddenLayerVars", reuse=True):
             # W1 = tf.get_variable("W1")
             # W2 = tf.get_variable("W2")
             W1 = tf.get_variable("W1",initializer=xavier_init, shape=[3*(self.config.hidden_size+1)+1 + self.config.batch_size, m])
             W2 = tf.get_variable("W2", initializer=xavier_init, shape=[m, 2])
         
-        with tf.variable_scope("hCLayer"):
+        with tf.variable_scope("hCLayer", reuse=True):
             W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
 
         loss = loss + self.config.beta*tf.nn.l2_loss(W1) + self.config.beta*tf.nn.l2_loss(W2) + self.config.beta*tf.nn.l2_loss(W_h)
