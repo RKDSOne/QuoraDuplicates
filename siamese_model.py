@@ -71,17 +71,18 @@ class SiameseModel(Model):
         # Initialize state as vector of zeros.
         batch_size = tf.shape(x1)[0]
         with tf.variable_scope("hCLayer"):
-            h1 = tf.get_variable("h1", initializer=xavier_init, shape=(self.config.batch_size, self.config.hidden_size))
-            c1 = tf.get_variable("c1",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
-            h2 =tf.get_variable("h2", shape=(self.config.batch_size, self.config.hidden_size),
-               initializer=tf.contrib.layers.xavier_initializer())
-            c2 = tf.get_variable("c2",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
-            W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
+            # h1 = tf.get_variable("h1", initializer=xavier_init, shape=(self.config.batch_size, self.config.hidden_size))
+            # c1 = tf.get_variable("c1",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
+            # h2 =tf.get_variable("h2", shape=(self.config.batch_size, self.config.hidden_size),
+            #    initializer=tf.contrib.layers.xavier_initializer())
+            # c2 = tf.get_variable("c2",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
+            # W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
+            # tf.get_variable_scope().reuse_variables()
+            h1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+            c1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+            h2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+            c2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
             tf.get_variable_scope().reuse_variables()
-        # h1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
-        # c1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
-        # h2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
-        # c2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
         with tf.variable_scope("LSTM"):
             _, (c1, h1) = tf.nn.dynamic_rnn(cell, x1, initial_state=LSTMStateTuple(c1, h1), sequence_length=self.seqlen1_placeholder)
             #h1_drop = tf.nn.dropout(h1, keep_prob=dropout_rate)
