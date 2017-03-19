@@ -64,7 +64,7 @@ class SiameseModel(Model):
             b1 = tf.get_variable("b1", initializer=xavier_init, shape=[1, m])
             b2 = tf.get_variable("b2", initializer=xavier_init, shape=[1, 2])
             #W1 = tf.get_variable("W1", initializer=xavier_init, shape=[3*self.config.hidden_size+1, m])
-            W1 = tf.get_variable("W1",initializer=xavier_init, shape=[3*(self.config.hidden_size+1)+1 + self.config.batch_size, m])
+            W1 = tf.get_variable("W1",initializer=xavier_init, shape=[3*(self.config.hidden_size+1)+1 , m])#+ self.config.batch_size
             W2 = tf.get_variable("W2", initializer=xavier_init, shape=[m, 2])
             tf.get_variable_scope().reuse_variables()
 
@@ -107,15 +107,15 @@ class SiameseModel(Model):
         sqdist_12 = tf.reduce_sum(sqdiff_12, 1)
         h_dist = tf.reshape(sqdist_12, [batch_size,1])
         h_mul = tf.multiply(h1, h2)
-        h1_MUL_W_h = tf.matmul(h1, W_h) # [batch_size(h+1)]x[(h+1)x(h+1)] = [batch_size(h+1)]
-        h_interaction = tf.matmul(h1_MUL_W_h, tf.transpose(h2)) # [batch_size(h+1)]x[(h+1)xbatch_size]
+        h1_MUL_W_h = tf.matmul(h1, W_h) # [batch_size(h+1)]x[(h+1)x(h+1)] = [batch_sizex(h+1)]
+        h_interaction = tf.matmul(h1_MUL_W_h, tf.transpose(h2)) # [batch_sizex(h+1)]x[(h+1)xbatch_size]
         if int(tf.__version__.split('.')[0]) >= 1: # TensorFlow 1.0 or greater
-            h_combined = tf.concat([h1, h2, h_dist, h_mul, h_interaction], 1) # 3*hidden_size+1 + batch_size
+            h_combined = tf.concat([h1, h2, h_dist, h_mul], 1) # , h_interaction # 3*hidden_size+1 + batch_size
         else:
-            h_combined = tf.concat(1, [h1, h2, h_dist, h_mul, h_interaction]) # 3*hidden_size+1 + batch_size
+            h_combined = tf.concat(1, [h1, h2, h_dist, h_mul]) # , h_interaction #3*hidden_size+1 + batch_size
         #h_combined_drop = tf.nn.dropout(h_combined, keep_prob=dropout_rate)
 
-        e1 = tf.matmul(h_combined, W1) + b1 # [batch_size, m]
+        e1 = tf.matmul(h_combined, W1) + b1 # [batch_size, m] # In[0]: [28,3332], In[1]: [3404,800]
         e1_relu = tf.nn.relu(e1)
         e1_drop = tf.nn.dropout(e1_relu, keep_prob=dropout_rate)
         preds = tf.matmul(e1_drop, W2) + b2
@@ -143,15 +143,14 @@ class SiameseModel(Model):
         m = self.config.second_hidden_size
         loss = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(targets=self.labels_placeholder, logits=preds, pos_weight=1.675))       
         with tf.variable_scope("HiddenLayerVars", reuse=True):
-            # W1 = tf.get_variable("W1")
-            # W2 = tf.get_variable("W2")
-            W1 = tf.get_variable("W1",initializer=xavier_init, shape=[3*(self.config.hidden_size+1)+1 + self.config.batch_size, m])
-            W2 = tf.get_variable("W2", initializer=xavier_init, shape=[m, 2])
+            W1 = tf.get_variable("W1")
+            W2 = tf.get_variable("W2")
+
         
         with tf.variable_scope("hCLayer", reuse=True):
-            W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
+            W_h = tf.get_variable("Wh")
 
-        loss = loss + self.config.beta*tf.nn.l2_loss(W1) + self.config.beta*tf.nn.l2_loss(W2) + self.config.beta*tf.nn.l2_loss(W_h)
+        loss = loss + self.config.beta*tf.nn.l2_loss(W1) + self.config.beta*tf.nn.l2_loss(W2) #+ self.config.beta*tf.nn.l2_loss(W_h)
 
         return loss
 
