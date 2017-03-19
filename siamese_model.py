@@ -137,13 +137,19 @@ class SiameseModel(Model):
         Returns:
             loss: A 0-d tensor (scalar)
         """
-        
+        xavier_init = tf.contrib.layers.xavier_initializer()
         m = self.config.second_hidden_size
         loss = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(targets=self.labels_placeholder, logits=preds, pos_weight=1.675))       
         with tf.variable_scope("HiddenLayerVars", reuse=True):
-            W1 = tf.get_variable("W1")
-            W2 = tf.get_variable("W2")
-        loss = loss + self.config.beta*tf.nn.l2_loss(W1)+ self.config.beta*tf.nn.l2_loss(W2)
+            # W1 = tf.get_variable("W1")
+            # W2 = tf.get_variable("W2")
+            W1 = tf.get_variable("W1",initializer=xavier_init, shape=[3*(self.config.hidden_size+1)+1 + self.config.batch_size, m])
+            W2 = tf.get_variable("W2", initializer=xavier_init, shape=[m, 2])
+        
+        with tf.variable_scope("hCLayer"):
+            W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
+
+        loss = loss + self.config.beta*tf.nn.l2_loss(W1) + self.config.beta*tf.nn.l2_loss(W2) + self.config.beta*tf.nn.l2_loss(W_h)
 
         return loss
 
