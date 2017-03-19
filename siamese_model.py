@@ -77,6 +77,7 @@ class SiameseModel(Model):
                initializer=tf.contrib.layers.xavier_initializer())
             c2 = tf.get_variable("c2",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
             W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
+            tf.get_variable_scope().reuse_variables()
         # h1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
         # c1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
         # h2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
