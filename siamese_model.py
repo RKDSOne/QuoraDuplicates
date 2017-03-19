@@ -82,6 +82,7 @@ class SiameseModel(Model):
             c1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
             h2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
             c2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+            W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
             tf.get_variable_scope().reuse_variables()
         with tf.variable_scope("LSTM"):
             _, (c1, h1) = tf.nn.dynamic_rnn(cell, x1, initial_state=LSTMStateTuple(c1, h1), sequence_length=self.seqlen1_placeholder)
