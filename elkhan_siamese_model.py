@@ -7,7 +7,7 @@ import os
 
 from model import Model
 
-class SiameseModel(Model):
+class SiameseModelNO(Model):
     """
     Implements a recursive neural network with an embedding layer and
     single hidden layer.
@@ -63,24 +63,16 @@ class SiameseModel(Model):
         with tf.variable_scope("HiddenLayerVars"):
             b1 = tf.get_variable("b1", initializer=xavier_init, shape=[1, m])
             b2 = tf.get_variable("b2", initializer=xavier_init, shape=[1, 2])
-            #W1 = tf.get_variable("W1", initializer=xavier_init, shape=[3*self.config.hidden_size+1, m])
-            W1 = tf.get_variable("W1",initializer=xavier_init, shape=[3*(self.config.hidden_size+1)+1 + self.config.batch_size, m])
+            W1 = tf.get_variable("W1", initializer=xavier_init, shape=[3*self.config.hidden_size+1, m])
             W2 = tf.get_variable("W2", initializer=xavier_init, shape=[m, 2])
             tf.get_variable_scope().reuse_variables()
 
         # Initialize state as vector of zeros.
         batch_size = tf.shape(x1)[0]
-        with tf.variable_scope("hCLayer"):
-            h1 = tf.get_variable("h1", initializer=xavier_init, shape=(self.config.batch_size, self.config.hidden_size))
-            c1 = tf.get_variable("c1",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
-            h2 =tf.get_variable("h2", shape=(self.config.batch_size, self.config.hidden_size),
-               initializer=tf.contrib.layers.xavier_initializer())
-            c2 = tf.get_variable("c2",shape=(self.config.batch_size, self.config.hidden_size),  initializer=xavier_init)
-            W_h = tf.get_variable("Wh",initializer=xavier_init, shape=(self.config.hidden_size + 1,self.config.hidden_size + 1))
-        # h1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
-        # c1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
-        # h2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
-        # c2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+        h1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+        c1 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+        h2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
+        c2 = tf.zeros([batch_size, self.config.hidden_size], dtype=tf.float32)
         with tf.variable_scope("LSTM"):
             _, (c1, h1) = tf.nn.dynamic_rnn(cell, x1, initial_state=LSTMStateTuple(c1, h1), sequence_length=self.seqlen1_placeholder)
             #h1_drop = tf.nn.dropout(h1, keep_prob=dropout_rate)
@@ -88,28 +80,15 @@ class SiameseModel(Model):
             _, (c2, h2) = tf.nn.dynamic_rnn(cell, x2, initial_state=LSTMStateTuple(c2, h2), sequence_length=self.seqlen2_placeholder)
             #h2_drop = tf.nn.dropout(h2, keep_prob=dropout_rate)
 
-        # add sentence length
-        sent_len1 = tf.cast(tf.reshape(self.seqlen1_placeholder, [batch_size,1]), tf.float32) / float(self.config.max_length)
-        sent_len2 = tf.cast(tf.reshape(self.seqlen2_placeholder, [batch_size,1]), tf.float32) / float(self.config.max_length)
-        if int(tf.__version__.split('.')[0]) >= 1: # TensorFlow 1.0 or greater
-            h1 = tf.concat([h1, sent_len1], 1) # hidden_size+1
-            h2 = tf.concat([h2, sent_len2], 1) # hidden_size+1
-        else:
-            h1 = tf.concat(1, [h1, sent_len1]) # hidden_size+1
-            h2 = tf.concat(1, [h2, sent_len2]) # hidden_size+1
-        # end of adding sentence length
-
         h_sub = tf.subtract(h1, h2)
         sqdiff_12 = tf.square(h_sub)
         sqdist_12 = tf.reduce_sum(sqdiff_12, 1)
         h_dist = tf.reshape(sqdist_12, [batch_size,1])
         h_mul = tf.multiply(h1, h2)
-        h1_MUL_W_h = tf.matmul(h1, W_h) # [batch_size(h+1)]x[(h+1)x(h+1)] = [batch_size(h+1)]
-        h_interaction = tf.matmul(h1_MUL_W_h, tf.transpose(h2)) # [batch_size(h+1)]x[(h+1)xbatch_size]
         if int(tf.__version__.split('.')[0]) >= 1: # TensorFlow 1.0 or greater
-            h_combined = tf.concat([h1, h2, h_dist, h_mul, h_interaction], 1) # 3*hidden_size+1 + batch_size
+            h_combined = tf.concat([h1, h2, h_dist, h_mul], 1) # 3*hidden_size+1
         else:
-            h_combined = tf.concat(1, [h1, h2, h_dist, h_mul, h_interaction]) # 3*hidden_size+1 + batch_size
+            h_combined = tf.concat(1, [h1, h2, h_dist, h_mul]) # 3*hidden_size+1
         #h_combined_drop = tf.nn.dropout(h_combined, keep_prob=dropout_rate)
 
         e1 = tf.matmul(h_combined, W1) + b1 # [batch_size, m]
