@@ -28,6 +28,7 @@ matplotlib.use('agg')
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import itertools
+import json
 
 logger = logging.getLogger("FinalProject")
 logger.setLevel(logging.DEBUG)
@@ -86,7 +87,7 @@ def do_train(args):
                 pass
 
 def do_evaluate(args):
-
+    simplejson = json
     # load config from input
     config_module_name = args.config.split(os.path.sep)[-1]
     config_module = imp.load_source(config_module_name, args.config)
@@ -94,9 +95,9 @@ def do_evaluate(args):
     print args.model_path, args.config
 
     helper = ModelHelper.load(args.model_path)
-    test_q1 = read_dat(args.data_test1)
-    test_q2 = read_dat(args.data_test2)
-    test_lab = read_lab(args.data_test_labels)
+    test_q1 = simplejson.load(args.data_test1)#read_dat(args.data_test1)
+    test_q2 = simplejson.load(args.data_test2)#read_dat(args.data_test2)
+    test_lab = simplejson.load(args.data_test_labels)#read_lab(args.data_test_labels)
     test_dat1 = helper.vectorize(test_q1)
     test_dat2 = helper.vectorize(test_q2)
     test_raw = zip(test_dat1, test_dat2, test_lab)

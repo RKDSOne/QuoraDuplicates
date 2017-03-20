@@ -11,7 +11,7 @@ from collections import Counter
 import numpy as np
 from util import read_dat, read_lab, ConfusionMatrix
 from defs import LBLS, NONE, LMAP, NUM, UNK, EMBED_SIZE
-
+import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -95,11 +95,70 @@ class ModelHelper(object):
             tok2id, max_length = pickle.load(f)
         return cls(tok2id, max_length)
 
+
 def load_and_preprocess_data(args, add_end_token=False):
     logger.info("Loading training data...")
+    simplejson = json
+    train_q1 = []
+    print "path : ",args.data_train1, type(args.data_train1)
+    train_q1 = simplejson.load(args.data_train1)
+    #read_dat(args.data_train1)
+    print "train_q1: \n",train_q1[:5]
+    train_q2 = simplejson.load(args.data_train2)
+    #read_dat(args.data_train2)
+    print "train_q2: \n",train_q2[:5]
+    train_lab = simplejson.load(args.data_train_labels)
+    #read_lab(args.data_train_labels)
+    print "train_lab: \n",train_lab[:5]
+    assert len(train_q1) == len(train_q2)
+    assert len(train_q1) == len(train_lab)
+    logger.info("Done. Read %d sentence pairs", len(train_lab))
+    logger.info("Loading dev data...")
+    dev_q1 = simplejson.load(args.data_dev1)
+    #read_dat(args.data_dev1)
+    dev_q2 = simplejson.load(args.data_dev2)
+    #read_dat(args.data_dev2)
+    dev_lab = simplejson.load(args.data_dev_labels)
+    #read_lab(args.data_dev_labels)
+    assert len(dev_q1) == len(dev_q2)
+    assert len(dev_q1) == len(dev_lab)
+    logger.info("Done. Read %d sentence pairs", len(dev_lab))
+    test_q1 = simplejson.load(args.data_test1)
+    #read_dat(args.data_test1)
+    test_q2 = simplejson.load(args.data_test2)
+    #read_dat(args.data_test2)
+    assert len(test_q1) == len(test_q2)
+    test_lab_dummy = [0 for i in range(len(test_q1))]
+
+    train_to_build_lkp = zip(train_q1+dev_q1+test_q1, train_q2+dev_q2+test_q2, train_lab+dev_lab+test_lab_dummy)
+
+    helper = ModelHelper.build(train_to_build_lkp)
+
+    if add_end_token:
+        for i in range(len(train_q1)):
+            train_q1[i].append(END_TOKEN)
+            train_q2[i].append(END_TOKEN)
+        for i in range(len(dev_q1)):
+            dev_q1[i].append(END_TOKEN)
+            dev_q2[i].append(END_TOKEN)
+
+
+    # now process all the input data.
+    train_dat1 = helper.vectorize(train_q1)
+    train_dat2 = helper.vectorize(train_q2)
+    dev_dat1   = helper.vectorize(dev_q1)
+    dev_dat2   = helper.vectorize(dev_q2)
+
+    return helper, train_dat1, train_dat2, train_lab, dev_dat1, dev_dat2, dev_lab
+
+def load_and_preprocess_data_ORIGINAL(args, add_end_token=False):
+    logger.info("Loading training data...")
     train_q1 = read_dat(args.data_train1)
+    print "train_q1: \n",train_q1[:5]
     train_q2 = read_dat(args.data_train2)
+    print "train_q2: \n",train_q2[:5]
     train_lab = read_lab(args.data_train_labels)
+    print "train_lab: \n",train_lab[:5]
     assert len(train_q1) == len(train_q2)
     assert len(train_q1) == len(train_lab)
     logger.info("Done. Read %d sentence pairs", len(train_lab))
